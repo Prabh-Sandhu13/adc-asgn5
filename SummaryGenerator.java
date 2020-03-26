@@ -1,3 +1,7 @@
+// SummaryGenerator is the class that gets data from the database for given time period
+// and generates summary which includes Customer information, Product information, Supplier information
+
+/*---------------------------Import statements------------------------------*/
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -9,22 +13,45 @@ import java.util.Map;
 import java.util.Scanner;
 
 public class SummaryGenerator {
+	/*---------------------------Global variables------------------------------*/
+	
+	// Array list of hashmap to store customer information
 	public static List<HashMap<String, String>> customer_list = new ArrayList<HashMap<String, String>>();
-	public static Map<String, ArrayList<HashMap<String, String>>> product_list = new HashMap<String, ArrayList<HashMap<String, String>>>();
-	public static Map<String, HashMap<String, String>> supplier_list = new HashMap<String, HashMap<String, String>>();
+	
+	// Hashmap of <String, ArrayList> to store product information
+	public static Map<String, ArrayList<HashMap<String, String>>> product_list = 
+			new HashMap<String, ArrayList<HashMap<String, String>>>();
+	
+	// Hashmap of <String, Hashmap> to store supplier information
+	public static Map<String, HashMap<String, String>> supplier_list = 
+			new HashMap<String, HashMap<String, String>>();
+	
+	// global variables for startdate, enddate and xml path file
 	public static String startDate;
 	public static String endDate;
 	public static String path = "";
+	
+	/*
+	 runQueries method:
+	  * functionality: This method is used to run sql queries and save data in global
+	  * variables which is further used by xml generator
+	 */
 	public static void runQueries() {
-		Connection connect = null;      
+		
+		// the link to the database
+		Connection connect = null;
+		
+		// a place to build up an SQL queries
         Statement statement1 = null;     
         Statement statement2 = null;
         Statement statement3 = null;
+        
+        //data structures to receive results from an SQL queries
         ResultSet resultSet1 = null;     
         ResultSet resultSet2 = null;
         ResultSet resultSet3 = null;
         
-
+        // get user input start date, end date and file path and save in global variables
         try (Scanner sc = new Scanner(System.in)) {
 			System.out.println("Please enter start date yyyy-mm-dd");
 			startDate = sc.nextLine();
@@ -42,7 +69,7 @@ public class SummaryGenerator {
 		}
         
 
-        
+        // Queries to get Customer information, Product information, Supplier information
         String q="with order_data as (select OrderID, sum(Quantity*UnitPrice) as order_value from orderdetails  group by OrderID),"+
         		"customer_info as (select CustomerID, count(orders.OrderID) as num_orders, sum(order_value) as order_total_val "+
         				"from orders join order_data using(OrderID) where OrderDate between '"+startDate+"' and '"+endDate+"' group by CustomerID)"+
@@ -63,6 +90,7 @@ public class SummaryGenerator {
         		"select SupplierID,CompanyName, Address, City, Region, PostalCode, Country, sum(units_sold),"+
         		"sum(total_value) from product_sales join supplier_info using(ProductID) group by SupplierID;";
 
+        // variables to store info for logging into the database
         String user;
         String password;
         String dbName;
@@ -73,15 +101,18 @@ public class SummaryGenerator {
         
         try {
 
+        	// load and setup connection with the MySQL driver
             Class.forName("com.mysql.cj.jdbc.Driver");
             
             connect = DriverManager.getConnection("jdbc:mysql://db.cs.dal.ca:3306?serverTimezone=UTC&useSSL=false", user, password);
 
-
+            // issue SQL query to the database
             statement1 = connect.createStatement();
             statement1.executeQuery("use " + dbName + ";");
             resultSet1 = statement1.executeQuery( q );
-            System.out.println("resultset1"+resultSet1);
+
+            
+            // process results from first query and update customer_list
             while (resultSet1.next()) {
             	Map<String, String> customer_info = new HashMap<String, String>();
             	customer_info.put("customer_name", resultSet1.getString("customer_name"));
@@ -97,10 +128,12 @@ public class SummaryGenerator {
             	customer_list.add((HashMap<String, String>) customer_info);
             }
 
-            
+            // issue SQL query to the database
             statement2 = connect.createStatement();
             statement2.executeQuery("use " + dbName + ";");
             resultSet2 = statement2.executeQuery( q2 );
+            
+            // process results from second query and update product_list
             while (resultSet2.next()) {
             	Map<String, String> product_info = new HashMap<String, String>();
             	product_info.put("product_name", resultSet2.getString("ProductName"));
@@ -118,10 +151,12 @@ public class SummaryGenerator {
             	}
             }
             
-            
+            // issue SQL query to the database
             statement3 = connect.createStatement();
             statement3.executeQuery("use " + dbName + ";");
             resultSet3 = statement3.executeQuery( q3 );
+            
+            // process results from third query and update supplier_list
             while (resultSet3.next()) {
             	Map<String, String> supplier_info = new HashMap<String, String>();
             	supplier_info.put("street_address", resultSet3.getString("Address"));
@@ -146,7 +181,11 @@ public class SummaryGenerator {
 
 	}
 	public static void main(String[] args) {
+		
+		// call runQueries to update global variables
 		runQueries();
+		
+		// call generateXml to generate readable summary report in XML format
 		XMLgenerator.generateXml();
 	}
 }

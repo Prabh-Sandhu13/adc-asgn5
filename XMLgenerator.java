@@ -1,5 +1,6 @@
+// XMLgenerator generates readable summary report in XML format
 
-	 
+/*---------------------------Import statements------------------------------*/
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,13 +21,20 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 	 
 public class XMLgenerator {
-	 
+	
+	// get file path from SummaryGenerator
     public static final String xmlFilePath = SummaryGenerator.path;
     
+    /*
+	 generateXml method:
+	  * functionality: This method is used to process data from customer_list,
+	  * product_list, supplier_list and generate Xml
+	 */
     public static void generateXml() {
  
         try {
- 
+        	
+        	// create instance of document using DocumentBuilderFactory
             DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
  
             DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
@@ -37,30 +45,33 @@ public class XMLgenerator {
             Element root = document.createElement("year_end_summary");
             document.appendChild(root);
             
+            // year element child of root
             Element year = document.createElement("year");
-            
             root.appendChild(year);
             
+            // start_date child of year and gets startDate from SummaryGenerator
             Element start_date = document.createElement("start_date");
             start_date.appendChild(document.createTextNode(SummaryGenerator.startDate));
             year.appendChild(start_date);
             
+            // end_date child of year and gets endDate from SummaryGenerator
             Element end_date = document.createElement("end_date");
             end_date.appendChild(document.createTextNode(SummaryGenerator.endDate));
             year.appendChild(end_date);
-            // employee element
+            
+            // customer_list element child of year_end_summary
             Element customer_list = document.createElement("customer_list");
- 
             root.appendChild(customer_list);
             
+            // product_list element child of year_end_summary
             Element product_list = document.createElement("product_list");
-            
             root.appendChild(product_list);
             
+            // supplier_list element child of year_end_summary
             Element supplier_list = document.createElement("supplier_list");
-            
             root.appendChild(supplier_list);
             
+            // process data in customer_list to form xml
             for (HashMap<String, String> m: SummaryGenerator.customer_list) {
             	Element customer = document.createElement("customer");
             	customer_list.appendChild(customer);
@@ -82,6 +93,7 @@ public class XMLgenerator {
             	}
             }
             
+            // process data in customer_list to form xml
             for (Map.Entry<String, ArrayList<HashMap<String, String>>> category_prods : SummaryGenerator.product_list.entrySet()) {
             	Element category = document.createElement("category");
             	product_list.appendChild(category);
@@ -112,6 +124,7 @@ public class XMLgenerator {
 
             }
             
+            // process data in supplier_list to form xml
             for (Map.Entry<String, HashMap<String, String>> supplier_info : SummaryGenerator.supplier_list.entrySet()) {
             	Element supplier = document.createElement("supplier");
             	supplier_list.appendChild(supplier);
@@ -143,7 +156,7 @@ public class XMLgenerator {
                 }
             }
 
-
+            // finally generate xml with proper indentation
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -164,4 +177,3 @@ public class XMLgenerator {
     }
     
 }
-
